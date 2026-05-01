@@ -1,0 +1,15 @@
+{
+  "name": "mr-cross-md",
+  "version": "3.0.0",
+  "description": "MR CROSS MD by NUEL",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "qrcode-terminal": "^0.12.0",
+    "moment-timezone": "^0.5.45",
+    "axios": "^1.6.0"
+  }
+}
