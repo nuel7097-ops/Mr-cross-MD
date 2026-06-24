@@ -7,21 +7,14 @@ const {
 } = require("@whiskeysockets/baileys")
 
 const P = require("pino")
-const readline = require("readline")
 const { Boom } = require("@hapi/boom")
+const loadPlugins = require("./lib/loader")
 
 const BOT_NAME = "💀 SLAY QUEEN MD"
 const OWNER = "2348063898506"
+const PREFIX = "."
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-})
-
-const question = (text) =>
-    new Promise(resolve => rl.question(text, resolve))
-
-async function startBot() {
+async function start() {
 
     const { state, saveCreds } = await useMultiFileAuthState("./session")
     const { version } = await fetchLatestBaileysVersion()
@@ -34,14 +27,10 @@ async function startBot() {
         printQRInTerminal: false
     })
 
-    sock.ev.on("creds.update", saveCreds)
+    sock.commands = new Map()
+    loadPlugins(sock)
 
-    /* 🔥 AUTO PAIRING CODE (RAILWAY FRIENDLY) */
-    if (!sock.authState.creds.registered) {
-        const number = process.env.NUMBER || await question("Enter WhatsApp number: ")
-        const code = await sock.requestPairingCode(number.replace(/[^0-9]/g, ""))
-        console.log("\n🔐 PAIRING CODE:", code, "\n")
-    }
+    sock.ev.on("creds.update", saveCreds)
 
     /* CONNECTION */
     sock.ev.on("connection.update", (update) => {
@@ -52,15 +41,15 @@ async function startBot() {
         }
 
         if (connection === "close") {
-            const reason = new Boom(lastDisconnect?.error)?.output?.statusCode
+            const code = new Boom(lastDisconnect?.error)?.output?.statusCode
 
-            if (reason !== DisconnectReason.loggedOut) {
-                startBot()
+            if (code !== DisconnectReason.loggedOut) {
+                start()
             }
         }
     })
 
-    /* MESSAGE HANDLER */
+    /* MESSAGES */
     sock.ev.on("messages.upsert", async ({ messages }) => {
         const msg = messages[0]
         if (!msg.message || msg.key.fromMe) return
@@ -70,26 +59,16 @@ async function startBot() {
             msg.message.extendedTextMessage?.text ||
             ""
 
-        const jid = msg.key.remoteJid
+        if (!text.startsWith(PREFIX)) return
 
-        if (text.toLowerCase() === ".menu") {
-            await sock.sendMessage(jid, {
-                text: `┏━━━━━━━━━━━━━━━┓
-┃ ${BOT_NAME}
-┣━━━━━━━━━━━━━━━┛
-┃ Owner: ${OWNER}
-┃ Status: ONLINE ✅
-┃ Prefix: .
-┗━━━━━━━━━━━━━━━┛`
-            })
-        }
+        const args = text.slice(1).trim().split(" ")
+        const cmd = args.shift().toLowerCase()
 
-        if (text.toLowerCase() === ".ping") {
-            await sock.sendMessage(jid, {
-                text: "🏓 SLAY QUEEN MD is alive!"
-            })
+        const command = sock.commands.get(cmd)
+        if (command) {
+            await command(sock, msg, args)
         }
     })
 }
 
-startBot()
+start()
