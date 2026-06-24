@@ -1,5 +1,5 @@
 {
-  "name": "mr-cross-md",
+  "name": "slay-queen-md",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -8,6 +8,8 @@
   "dependencies": {
     "@whiskeysockets/baileys": "latest",
     "pino": "latest",
-    "qrcode-terminal": "latest"
+    "axios": "latest",
+    "ytdl-core": "latest",
+    "@hapi/boom": "latest"
   }
 }
